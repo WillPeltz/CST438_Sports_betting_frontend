@@ -10,7 +10,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { callGamesByDate } from "../ApiScripts";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navagation/types";
+import { RootStackParamList } from "../navigation/types";
 import { getAllFavTeamInfo, logDatabaseContents } from "../../database/db";
 import { useFocusEffect } from "@react-navigation/native";
 

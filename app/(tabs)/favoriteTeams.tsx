@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { callTeams } from "../ApiScripts";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navagation/types";
+import { RootStackParamList } from "../navigation/types";
 import {
   addTeamToFavs,
   removeTeamFromFav,

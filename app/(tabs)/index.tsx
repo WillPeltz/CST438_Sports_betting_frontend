@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import Button from "@/components/Button";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../navagation/types"; // Import navigation types
+import { RootStackParamList } from "../navigation/types"; // Import navigation types
 import loginPicture from "../../assets/images/loginPic.jpg";
 import {initializeDatabase, getAllTeams } from "../../database/db";
 
