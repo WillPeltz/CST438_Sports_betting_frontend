@@ -1,3 +1,5 @@
+// Important: Make sure you have renamed this file to AccountCreation.tsx
+
 import React, { useState } from "react";
 import {
   View,
@@ -8,20 +10,18 @@ import {
   Alert,
   ImageBackground,
 } from "react-native";
-import { insertUser, isUsernameAvailable } from "../database/db"; // Import database functions
-import accountPic from "../assets/images/accountCreationPic.jpg"; // Your background image
-import { useNavigation } from "@react-navigation/native"; // Import the useNavigation hook
+import { insertUser, isUsernameAvailable } from "../database/db";
+import accountPic from "../assets/images/accountCreationPic.jpg";
 
-const AccountCreation = () => {
-  // State to store the values of the form fields
+import { RootStackScreenProps } from "./navigation/types";
+
+const AccountCreation = ({ navigation }: RootStackScreenProps<'AccountCreation'>) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const navigation = useNavigation(); // Access the navigation object
 
-  // Handle account creation logic
   const handleCreateAccount = async () => {
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match!");
@@ -33,7 +33,6 @@ const AccountCreation = () => {
       return;
     }
 
-    // Check if the username already exists in the database
     const usernameExists = await isUsernameAvailable(username);
     if (!usernameExists) {
       Alert.alert("Error", "Username already exists!");
@@ -41,16 +40,11 @@ const AccountCreation = () => {
     }
 
     try {
-      // Insert the new user into the database
       await insertUser(username, password);
-
-      // Simulate account creation success
       Alert.alert("Account Created", `Welcome, ${username}!`);
 
-      // After successful account creation, navigate to the Login screen
       navigation.navigate("Login");
 
-      // Reset form fields (optional)
       setUsername("");
       setEmail("");
       setPassword("");
@@ -103,12 +97,11 @@ const AccountCreation = () => {
 
         <Button title="Create Account" onPress={handleCreateAccount} />
 
-
         <View style={styles.footer}>
           <Text>Already have an account? </Text>
           <Button
             title="Login"
-            onPress={() => navigation.navigate("Login")} // Navigate to the Login screen
+            onPress={() => navigation.navigate("Login")}
           />
         </View>
       </View>
@@ -123,7 +116,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // Semi-transparent background for form
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     padding: 16,
     borderRadius: 10,
     marginHorizontal: 20,
