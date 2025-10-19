@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
@@ -12,29 +12,13 @@ import {
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
 import loginPic from "../../assets/images/loginPic2.jpg";
-import { verifyUserLogin, getUserID, initializeDatabase } from "../../database/db";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [dbInitialized, setDbInitialized] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-  useEffect(() => {
-    const initializeDb = async () => {
-      try {
-        await initializeDatabase();
-        setDbInitialized(true);
-      } catch (error) {
-        console.error("Database initialization error:", error);
-        Alert.alert("Error", "An error occurred while initializing the database.");
-      }
-    };
-
-    initializeDb();
-  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -45,36 +29,44 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const isValidUser = await verifyUserLogin(username, password);
+      // IMPORTANT: Replace 'YOUR_LOCAL_IP' with your computer's local IP address
+      const response = await fetch("http://10.0.2.2:8080/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
+
       setLoading(false);
 
-      if (isValidUser) {
-        const userID = await getUserID(username);
+      if (response.ok) {
+        // Successful login
+        const user = await response.json();
 
-        if (userID) {
-          //await AsyncStorage.setItem("userID", userID.toString()); // Store userID
-          await AsyncStorage.setItem("username", username);  // Store username
-          Alert.alert("Welcome", "You are now logged in!");
+        // Store user info in AsyncStorage for session management
+        await AsyncStorage.setItem("username", user.username);
+        // You can also store a user ID or token if your backend sends one
+        // await AsyncStorage.setItem("userID", user.id.toString());
 
-          setTimeout(() => {
-            navigation.navigate("favoriteTeams", { username }); // Pass username via favoriteTeams
-          }, 500);
-        } else {
-          Alert.alert("Error", "User not found.");
-        }
+        Alert.alert("Welcome", `You are now logged in as ${user.username}!`);
+
+        // Navigate to the main part of the app
+        navigation.navigate("favoriteTeams", { username: user.username });
       } else {
-        Alert.alert("Error", "Incorrect username or password.");
+        // Failed login
+        const errorMessage = await response.text();
+        Alert.alert("Login Failed", errorMessage || "Invalid username or password.");
       }
     } catch (error) {
       setLoading(false);
-      Alert.alert("Error", "An error occurred while verifying login.");
-      console.error(error);
+      console.error("Login error:", error);
+      Alert.alert("Connection Error", "Could not connect to the server.");
     }
   };
-
-  if (!dbInitialized) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
 
   return (
     <ImageBackground source={loginPic} style={styles.backgroundImage}>
@@ -84,6 +76,7 @@ export default function LoginScreen() {
           placeholder="Username"
           value={username}
           onChangeText={setUsername}
+          autoCapitalize="none"
         />
         <TextInput
           style={styles.input}
@@ -95,7 +88,14 @@ export default function LoginScreen() {
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : (
-          <Button title="Login" onPress={handleLogin} />
+          <>
+            <Button title="Login" onPress={handleLogin} />
+            <Button
+              title="Create Account"
+              onPress={() => navigation.navigate("AccountCreation")}
+              color="#aaa" // Optional: differentiate the button
+            />
+          </>
         )}
       </View>
     </ImageBackground>
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor: "rgba(0,0,0,0.3)", // Added a slight overlay for readability
   },
   input: {
     borderWidth: 1,
