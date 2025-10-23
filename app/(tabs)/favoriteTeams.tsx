@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { callTeams } from "../ApiScripts";
+import { callTeams } from "../../utils/ApiScripts";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
+import { RootStackParamList } from "../../utils/navigation/types";
 import {
   addTeamToFavs,
   removeTeamFromFav,

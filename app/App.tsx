@@ -7,7 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Index from '../app/(tabs)/index'; // Your main screen
 import LoginScreen from './(tabs)/login';
 import AccountCreation from './AccountCreation'; // The account creation screen
-import { RootStackParamList } from './navigation/types'; // Navigation types
+import { RootStackParamList } from '../utils/navigation/types'; // Navigation types
 import favoriteTeams from './(tabs)/favoriteTeams';
 import LogoutScreen from './(tabs)/logout';
 

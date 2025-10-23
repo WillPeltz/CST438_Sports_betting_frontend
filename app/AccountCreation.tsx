@@ -13,7 +13,7 @@ import {
 import { insertUser, isUsernameAvailable } from "../database/db";
 import accountPic from "../assets/images/accountCreationPic.jpg";
 
-import { RootStackScreenProps } from "./navigation/types";
+import { RootStackScreenProps } from "../utils/navigation/types";
 
 const AccountCreation = ({ navigation }: RootStackScreenProps<'AccountCreation'>) => {
   const [username, setUsername] = useState("");

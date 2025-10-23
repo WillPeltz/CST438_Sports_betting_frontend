@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
+import { RootStackParamList } from "../../utils/navigation/types";
 import loginPic from "../../assets/images/loginPic2.jpg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 

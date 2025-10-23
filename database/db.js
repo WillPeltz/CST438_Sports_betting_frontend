@@ -188,8 +188,6 @@ export async function getUserID(username) {
     return user ? user.id : null;
 }
 
-// Call initializeDatabase() when app is loaded
-initializeDatabase();
 
 // -------------------------------- userTableFunctions END ------------------------------------------
 
