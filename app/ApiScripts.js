@@ -44,44 +44,76 @@ export const callTeams = async () => {
     return [];
   }
 };
+import { Platform } from 'react-native';
+
 export const callGamesByDate = async (startDate, endDate, teamID) => {
   try {
-    const json = await apiCall(
-      `https://api-nba-v1.p.rapidapi.com/games?league=standard&season=2024&team=${teamID}`
-    );
-    if (!json || !json.response) {
-      throw new Error("Invalid API response");
+    console.log('Fetching games with params:', { startDate, endDate, teamID });
+    // Use correct host depending on platform/emulator
+    const host = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080';
+    const url = `${host}/api/games/getAllGames`;
+    console.log('Making request to:', url);
+
+    const response = await fetch(url);
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+    
+    const rawResponse = await response.text();
+    console.log('Raw response:', rawResponse);
+    
+    let json;
+    try {
+      json = JSON.parse(rawResponse);
+      console.log('Parsed JSON:', json);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error('Failed to parse API response');
     }
-    // Filter games based on the provided date range. It was a lot easier to filter out games outside the range
-    // than to select each date in the range and check.
-    // this also prevents having to check if there is a game on a specific date
-    const gameData = json.response
+    
+    if (!json) {
+      throw new Error("Empty API response");
+    }
+
+    console.log('Starting to filter games');
+    // Filter games based on the provided date range
+    const gameData = json
       .filter((game) => {
-        const gameDate = new Date(game.date.start);
+        const gameDate = new Date(game.date);
         const start = new Date(startDate);
         const end = new Date(endDate);
+        console.log('Comparing dates:', {
+          gameDate: gameDate.toISOString(),
+          start: start.toISOString(),
+          end: end.toISOString(),
+          isInRange: gameDate >= start && gameDate <= end
+        });
         return gameDate >= start && gameDate <= end;
       })
-      // I think I could make call Teams redundant with this stuff at some point.
-      .map((game) => ({
-        id: game.id,
-        date: new Date(game.date.start),
-        homeTeam: {
-          id: game.teams.home.id,
-          name: game.teams.home.name,
-          nickname: game.teams.home.nickname,
-          logo: game.teams.home.logo,
-        },
-        awayTeam: {
-          id: game.teams.visitors.id,
-          name: game.teams.visitors.name,
-          nickname: game.teams.visitors.nickname,
-          logo: game.teams.visitors.logo,
-        },
-      }));
-    return gameData; // Return the filtered and mapped game data
+      .map((game) => {
+        console.log('Mapping game:', game);
+        return {
+          id: game.id,
+          date: new Date(game.date),
+          homeTeam: {
+            id: game.homeTeam.id,
+            name: game.homeTeam.name,
+            nickname: game.homeTeam.abbreviation,
+            logo: `https://interstate21.com/nba-logos/${game.homeTeam.abbreviation}.png`,
+          },
+          awayTeam: {
+            id: game.visitorTeam.id,
+            name: game.visitorTeam.name,
+            nickname: game.visitorTeam.abbreviation,
+            logo: `https://interstate21.com/nba-logos/${game.visitorTeam.abbreviation}.png`,
+          },
+        };
+      });
+    console.log('Filtered and mapped games:', gameData);
+    return gameData;
   } catch (error) {
     console.error("Error fetching games:", error);
+    console.error("Error details:", error.message);
     return [];
   }
 };
@@ -128,8 +160,10 @@ export const callNFLTeams = async () => {
 export const callGamesByDateNFL = async (startDate, endDate, teamID) => {
   try {
     const json = await apiCallBalldontlieNFL(
-      `https://api.balldontlie.io/v1/games?team_ids[]=${teamID}&start_date=${startDate}&end_date=${endDate}`
+      `http://localhost:8080/api/games/getAllGames`
+      // `https://api.balldontlie.io/v1/games?team_ids[]=${teamID}&start_date=${startDate}&end_date=${endDate}`
     );
+
     if (!json || !json.data) {
       throw new Error("Invalid API response");
     }

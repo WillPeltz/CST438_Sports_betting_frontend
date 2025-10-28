@@ -88,6 +88,14 @@ export async function initializeDatabase() {
             (41, "Washington Wizards", "Wizards", "https://upload.wikimedia.org/wikipedia/en/0/02/Washington_Wizards_logo.svg");
         `);
     }
+            // For local testing: seed a couple of favorites for testUser1 (no-op if already present)
+            // This uses a subselect to look up the user's id so it works on first-run.
+            await db.execAsync(`
+                INSERT OR IGNORE INTO favorite (team_id, user_id)
+                VALUES
+                  (11, (SELECT id FROM user WHERE username = 'testUser1')),
+                  (17, (SELECT id FROM user WHERE username = 'testUser1'));
+            `);
 }
 // -------------------------------- userTableFunctions ------------------------------------------
 
