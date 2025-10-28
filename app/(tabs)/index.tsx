@@ -2,20 +2,12 @@ import React, { useEffect } from "react";
 import { View, StyleSheet, Dimensions, Alert } from "react-native";
 import { Image } from "expo-image";
 import Button from "@/components/Button";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../../utils/navigation/types"; // Import navigation types
+import { useRouter } from "expo-router";
 import loginPicture from "../../assets/images/loginPic.jpg";
-import {initializeDatabase, getAllTeams } from "../../database/db";
-
-// Define the type for the navigation prop
-type IndexScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  "Home"
->;
+import { initializeDatabase } from "../../database/db"; 
 
 const Index = () => {
-  const navigation = useNavigation<IndexScreenNavigationProp>(); // Use the typed navigation hook
+  const router = useRouter(); 
 
   useEffect(() => {
     // Initialize the database and create tables when the component mounts
@@ -33,31 +25,16 @@ const Index = () => {
     };
 
     initializeDb();
-
-       // Fetch teams after the database has been initialized (For testing to see that our teams exist already)
-      //  const fetchTeams = async () => {
-      //   try {
-      //     const teams = await getAllTeams();
-      //     console.log('Teams in database:', teams);
-      //   } catch (error) {
-      //     console.error("Error fetching teams: ", error);
-      //   }
-      // };
-  
-      // fetchTeams();
   }, []);
-
-
-
 
   // Function to navigate to the login screen
   const handleLogin = () => {
-    navigation.navigate("login"); // Navigate to the Login screen
+    router.push("/login"); 
   };
 
   // Function to navigate to the account creation screen
   const handleCreateAccount = () => {
-    navigation.navigate("AccountCreation"); // Navigate to the CreateAccount screen
+    router.push("/AccountCreation"); 
   };
 
   return (
@@ -66,8 +43,8 @@ const Index = () => {
         <Image source={loginPicture} style={styles.image} resizeMode="cover" />
       </View>
       <View style={styles.footerContainer}>
-        <Button theme="primary" label="Login" onPress={handleLogin} />{" "}
-        {/* Add onPress to navigate */}
+        <Button theme="primary" label="Login" onPress={handleLogin} />
+        {/* 5. Removed the {" "} text node that was causing the crash */}
         <Button label="Create Account" onPress={handleCreateAccount} />
       </View>
     </View>

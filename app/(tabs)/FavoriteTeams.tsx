@@ -8,26 +8,28 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { callTeams } from "../../utils/ApiScripts";
-import { useRoute, RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../../utils/navigation/types";
+// 1. Import useLocalSearchParams from expo-router
+import { useLocalSearchParams } from "expo-router";
+// 2. Import your local database functions
 import {
   addTeamToFavs,
   removeTeamFromFav,
   getFavTeamNames,
   logDatabaseContents,
-} from "../../database/db";
+  getAllTeams, // Import getAllTeams
+} from "../../database/db"; // Make sure this path is correct
 
+// 3. Update interface to match your local 'team' table schema
 interface Team {
-  id: string;
-  name: string;
+  team_id: number;
+  team_name: string;
   nickname: string;
-  logo: string;
+  logo_url: string;
 }
 
 const FavoriteTeams = () => {
-  const route = useRoute<RouteProp<RootStackParamList, "favoriteTeams">>();
-  const username = route.params?.username; // Get username from navigation params
+  // 4. Use useLocalSearchParams to get parameters
+  const { username } = useLocalSearchParams<{ username: string }>();
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -36,32 +38,32 @@ const FavoriteTeams = () => {
     const initialize = async () => {
       if (!username) {
         console.error("No username received via navigation");
+        setLoading(false);
         return;
       }
 
       setLoading(true);
-
       try {
+        // 5. Get favorite teams from the local DB
         const favTeams = await getFavTeamNames(username);
         setSelectedTeams(favTeams || []);
 
-        process.env.RAPIDAPI_KEY = "f48a5921f5msh580809ba8c9e6cfp181a8ajsn545d715d6844";
-        const teamData = await callTeams();
+        // 6. Get ALL teams from your local database, not the API
+        const teamData = await getAllTeams();
 
         if (teamData && teamData.length > 0) {
           setTeams(teamData);
         } else {
-          console.error("No teams received from API.");
+          console.error("No teams found in local database.");
         }
       } catch (error) {
         console.error("Error fetching teams:", error);
       }
-
       setLoading(false);
     };
 
     initialize();
-  }, [username]);
+  }, [username]); // This hook will re-run if the username ever changes
 
   const toggleTeamSelection = async (team_name: string) => {
     if (!username) return;
@@ -88,22 +90,23 @@ const FavoriteTeams = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Select Your Favorite Teams</Text>
       {teams.length === 0 ? (
-        <Text style={styles.errorText}>No teams available. Check API Key.</Text>
+        <Text style={styles.errorText}>No teams available.</Text>
       ) : (
         <FlatList
           data={teams}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.team_id.toString()} // Use team_id
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
                 styles.teamItem,
-                selectedTeams.includes(item.name) ? styles.selectedTeam : {},
+                selectedTeams.includes(item.team_name) ? styles.selectedTeam : {},
               ]}
-              onPress={() => toggleTeamSelection(item.name)}
+              onPress={() => toggleTeamSelection(item.team_name)}
             >
               <View style={styles.teamContainer}>
-                <Image source={{ uri: item.logo }} style={styles.logo} />
-                <Text style={styles.teamText}>{item.name}</Text>
+                {/* 7. Use logo_url and team_name from your DB */}
+                <Image source={{ uri: item.logo_url }} style={styles.logo} />
+                <Text style={styles.teamText}>{item.team_name}</Text>
               </View>
             </TouchableOpacity>
           )}

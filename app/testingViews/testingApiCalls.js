@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text, Button } from "react-native";
-import { callGamesByDate } from "../ApiScripts"; // Assuming the function is in ApiScripts
+import { callGamesByDate } from "../../utils/ApiScripts"; // Assuming the function is in ApiScripts
 
 const GameFetcher = () => {
   const startDate = "2025-01-01";
