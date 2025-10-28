@@ -1,5 +1,4 @@
 import { Tabs } from "expo-router";
-
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function TabLayout() {
@@ -36,9 +35,7 @@ export default function TabLayout() {
           title: "About",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={
-                focused ? "information-circle" : "information-circle-outline"
-              }
+              name={focused ? "information-circle" : "information-circle-outline"}
               color={color}
               size={24}
             />
@@ -50,14 +47,23 @@ export default function TabLayout() {
         options={{
           title: "Login",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={
-                focused ? "key" : "key"
-              }
-              color={color}
-              size={24}
-            />
+            <Ionicons name="key" color={color} size={24} />
           ),
+        }}
+      />
+      {/* Hide these from tab bar but make them accessible */}
+      <Tabs.Screen
+        name="AccountCreation"
+        options={{
+          href: null, // Hides from tab bar
+          title: "Create Account",
+        }}
+      />
+      <Tabs.Screen
+        name="favoriteTeams"
+        options={{
+          href: null, // Hides from tab bar
+          title: "Favorite Teams",
         }}
       />
     </Tabs>

@@ -1,5 +1,3 @@
-// Important: Make sure you have renamed this file to AccountCreation.tsx
-
 import React, { useState } from "react";
 import {
   View,
@@ -9,51 +7,90 @@ import {
   StyleSheet,
   Alert,
   ImageBackground,
+  Platform,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { insertUser, isUsernameAvailable } from "../../database/db";
 import accountPic from "../../assets/images/accountCreationPic.jpg";
 
-import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
+const BACKEND_URL = Platform.OS === 'android' 
+  ? "http://10.0.2.2:8080"  // android emulator
+  : "http://localhost:8080";  // ios simulator
 
 const AccountCreation = () => {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const router = useRouter();
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-
   const handleCreateAccount = async () => {
+    // Validation
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match!");
       return;
     }
 
-    if (!username || !email || !password) {
+    if (!username || !password) {
       Alert.alert("Error", "Please fill in all fields!");
       return;
     }
 
-    const usernameExists = await isUsernameAvailable(username);
-    if (!usernameExists) {
-      Alert.alert("Error", "Username already exists!");
+    if (password.length < 4) {
+      Alert.alert("Error", "Password must be at least 4 characters long!");
       return;
     }
 
     try {
-      await insertUser(username, password);
-      Alert.alert("Account Created", `Welcome, ${username}!`);
+      console.log(`Attempting account creation at: ${BACKEND_URL}/api/users/register`);
+      
+      // Call Spring Boot backend to create account
+      const response = await fetch(`${BACKEND_URL}/api/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          username: username, 
+          password: password 
+        }),
+      });
 
-      navigation.navigate("login");
+      const data = await response.json();
+      console.log("Registration response:", data);
 
-      setUsername("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
+      if (response.ok && data.success) {
+        // Also insert into local database for offline access
+        const usernameExists = await isUsernameAvailable(username);
+        if (usernameExists) {
+          await insertUser(username, password);
+        }
+
+        Alert.alert(
+          "Account Created", 
+          `Welcome, ${username}! You can now login.`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Clear form
+                setUsername("");
+                setPassword("");
+                setConfirmPassword("");
+                // Navigate to login
+                router.push("/login");
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Error", data.message || "Could not create account. Username may already exist.");
+      }
     } catch (error) {
       console.error("Error creating account:", error);
-      Alert.alert("Error", "An error occurred while creating the account.");
+      Alert.alert(
+        "Connection Error", 
+        `Could not connect to server at ${BACKEND_URL}. Make sure:\n\n1. Spring Boot backend is running\n2. You're using the correct IP address\n3. You're testing on Android emulator or device (not web browser)`
+      );
     }
   };
 
@@ -71,14 +108,8 @@ const AccountCreation = () => {
           placeholder="Username"
           value={username}
           onChangeText={setUsername}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
         />
 
         <TextInput
@@ -87,6 +118,7 @@ const AccountCreation = () => {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoCapitalize="none"
         />
 
         <TextInput
@@ -95,6 +127,7 @@ const AccountCreation = () => {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
+          autoCapitalize="none"
         />
 
         <Button title="Create Account" onPress={handleCreateAccount} />
@@ -103,14 +136,7 @@ const AccountCreation = () => {
           <Text>Already have an account? </Text>
           <Button
             title="Login"
-            onPress={() => {
-              console.log("Navigation object:", navigation);
-              if (navigation && navigation.navigate) {
-                navigation.navigate("login");
-              } else {
-                console.error("Navigation is undefined!");
-              }
-            }}
+            onPress={() => router.push("/login")}
           />
         </View>
       </View>
@@ -125,16 +151,19 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 16,
     borderRadius: 10,
     marginHorizontal: 20,
+    marginVertical: 40,
   },
   heading: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+    marginTop: 20,
     textAlign: "center",
+    color: "#333",
   },
   input: {
     height: 45,
@@ -143,6 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 12,
     paddingLeft: 10,
+    backgroundColor: "#fff",
   },
   footer: {
     marginTop: 20,

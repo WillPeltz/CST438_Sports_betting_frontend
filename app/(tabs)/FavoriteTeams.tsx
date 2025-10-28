@@ -8,9 +8,8 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { callTeams } from "../ApiScripts";
-import { useRoute, RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
 import {
   addTeamToFavs,
   removeTeamFromFav,
@@ -26,8 +25,8 @@ interface Team {
 }
 
 const FavoriteTeams = () => {
-  const route = useRoute<RouteProp<RootStackParamList, "favoriteTeams">>();
-  const username = route.params?.username; // Get username from navigation params
+  const params = useLocalSearchParams();
+  const username = params.username as string; // Get username from navigation params
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
