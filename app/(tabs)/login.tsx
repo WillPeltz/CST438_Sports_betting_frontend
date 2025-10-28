@@ -11,10 +11,9 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
+import { useRouter } from "expo-router";
 import loginPic from "../../assets/images/loginPic2.jpg";
-import { verifyUserLogin, getUserID, initializeDatabase } from "../../database/db";
+import { getUserID, initializeDatabase } from "../../database/db";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -22,8 +21,8 @@ import * as WebBrowser from 'expo-web-browser';
 WebBrowser.maybeCompleteAuthSession();
 
 const BACKEND_URL = Platform.OS === 'android' 
-  ? "http://10.0.2.2:8080"  // android
-  : "http://localhost:8080";  // ios
+  ? "http://10.0.2.2:8080"  // android emulator
+  : "http://localhost:8080";  // ios simulator
 
 const GITHUB_CLIENT_ID = "Ov23liNkstCt53rnwRkV";
 
@@ -33,7 +32,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const router = useRouter();
 
   const discovery = {
     authorizationEndpoint: 'https://github.com/login/oauth/authorize',
@@ -103,7 +102,10 @@ export default function LoginScreen() {
           Alert.alert("Welcome", "You are now logged in!");
 
           setTimeout(() => {
-            navigation.navigate("favoriteTeams", { username: data.githubUsername });
+            router.push({
+              pathname: "/favoriteTeams",
+              params: { username: data.githubUsername }
+            });
           }, 500);
         } else {
           Alert.alert("Error", "User not found.");
@@ -129,29 +131,47 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const isValidUser = await verifyUserLogin(username, password);
+      console.log(`Attempting login to: ${BACKEND_URL}/api/users/login`);
+      
+      // Call Spring Boot backend
+      const response = await fetch(`${BACKEND_URL}/api/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          username: username, 
+          password: password 
+        }),
+      });
+
+      console.log("Response status:", response.status);
+      const data = await response.json();
+      console.log("Response data:", data);
+      
       setLoading(false);
 
-      if (isValidUser) {
-        const userID = await getUserID(username);
+      if (response.ok && data.success) {
+        // Store username for later use
+        await AsyncStorage.setItem("username", username);
+        Alert.alert("Welcome", "You are now logged in!");
 
-        if (userID) {
-          await AsyncStorage.setItem("username", username);
-          Alert.alert("Welcome", "You are now logged in!");
-
-          setTimeout(() => {
-            navigation.navigate("favoriteTeams", { username });
-          }, 500);
-        } else {
-          Alert.alert("Error", "User not found.");
-        }
+        setTimeout(() => {
+          router.push({
+            pathname: "/favoriteTeams",
+            params: { username }
+          });
+        }, 500);
       } else {
-        Alert.alert("Error", "Incorrect username or password.");
+        Alert.alert("Error", data.message || "Incorrect username or password.");
       }
     } catch (error) {
       setLoading(false);
-      Alert.alert("Error", "An error occurred while verifying login.");
-      console.error(error);
+      console.error("Login error:", error);
+      Alert.alert(
+        "Connection Error", 
+        `Could not connect to server at ${BACKEND_URL}. Make sure:\n\n1. Spring Boot backend is running\n2. You're using the correct IP address\n3. You're testing on Android emulator or device (not web browser)`
+      );
     }
   };
 
@@ -162,24 +182,35 @@ export default function LoginScreen() {
   };
 
   if (!dbInitialized) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>Initializing database...</Text>
+      </View>
+    );
   }
 
   return (
     <ImageBackground source={loginPic} style={styles.backgroundImage}>
       <View style={styles.container}>
+        <Text style={styles.title}>Sports Betting Login</Text>
+        
         <TextInput
           style={styles.input}
           placeholder="Username"
+          placeholderTextColor="#999"
           value={username}
           onChangeText={setUsername}
+          autoCapitalize="none"
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor="#999"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
         />
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />
@@ -214,6 +245,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#25292e",
+  },
+  loadingText: {
+    marginTop: 10,
+    color: "#fff",
+    fontSize: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: {width: -1, height: 1},
+    textShadowRadius: 10
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -235,6 +286,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: {width: -1, height: 1},
+    textShadowRadius: 5
   },
   githubButton: {
     backgroundColor: "#333",
