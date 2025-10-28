@@ -10,12 +10,14 @@ import {
   Alert,
   ImageBackground,
 } from "react-native";
-import { insertUser, isUsernameAvailable } from "../database/db";
-import accountPic from "../assets/images/accountCreationPic.jpg";
+import { insertUser, isUsernameAvailable } from "../../database/db";
+import accountPic from "../../assets/images/accountCreationPic.jpg";
 
-import { RootStackScreenProps } from "./navigation/types";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { RootStackParamList } from "../navigation/types";
 
-const AccountCreation = ({ navigation }: RootStackScreenProps<'AccountCreation'>) => {
+const AccountCreation = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +45,7 @@ const AccountCreation = ({ navigation }: RootStackScreenProps<'AccountCreation'>
       await insertUser(username, password);
       Alert.alert("Account Created", `Welcome, ${username}!`);
 
-      navigation.navigate("Login");
+      navigation.navigate("login");
 
       setUsername("");
       setEmail("");
@@ -101,7 +103,14 @@ const AccountCreation = ({ navigation }: RootStackScreenProps<'AccountCreation'>
           <Text>Already have an account? </Text>
           <Button
             title="Login"
-            onPress={() => navigation.navigate("Login")}
+            onPress={() => {
+              console.log("Navigation object:", navigation);
+              if (navigation && navigation.navigate) {
+                navigation.navigate("login");
+              } else {
+                console.error("Navigation is undefined!");
+              }
+            }}
           />
         </View>
       </View>
