@@ -40,7 +40,7 @@ export const callTeams = async () => {
     //console.log("teamData:", teamData);
     return teamData;
   } catch (error) {
-    console.error("Error fetching teams:", error);
+    console.error("Error fetching nba teams:", error);
     return [];
   }
 };
@@ -82,6 +82,74 @@ export const callGamesByDate = async (startDate, endDate, teamID) => {
     return gameData; // Return the filtered and mapped game data
   } catch (error) {
     console.error("Error fetching games:", error);
+    return [];
+  }
+};
+// for balldontlie api
+export const apiCallBalldontlieNFL = async (endpoint) => {
+  try {
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        "balldontlie.api.key": "53fbbb6b-15ec-4db5-bdbc-7dfbeb809802",
+        "balldontlie.api.url": "https://api.balldontlie.io/v1",
+      },
+    });
+    const json = await response.json();
+    return json;
+  }
+  catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+export const callNFLTeams = async () => {
+  try {
+    const json = await apiCallBalldontlieNFL(
+      "https://api.balldontlie.io/v1/teams"
+    );
+    if (!json || !json.data) {
+      throw new Error("Invalid API response");
+    }
+    const footballTeamData = json.data.map((team) => ({
+      id: team.id,
+      name: team.name,
+      abbreviation: team.abbreviation,
+      conference: team.conference,
+    }));
+    return footballTeamData;
+  } catch (error) {
+    console.error("Error fetching football teams:", error);
+    return [];
+  }
+};
+
+export const callGamesByDateNFL = async (startDate, endDate, teamID) => {
+  try {
+    const json = await apiCallBalldontlieNFL(
+      `https://api.balldontlie.io/v1/games?team_ids[]=${teamID}&start_date=${startDate}&end_date=${endDate}`
+    );
+    if (!json || !json.data) {
+      throw new Error("Invalid API response");
+    }
+    const footballGameData = json.data.map((game) => ({
+      id: game.id,
+      date: new Date(game.date),
+      homeTeam: {
+        id: game.home_team.id,
+        name: game.home_team.full_name,
+        abbreviation: game.home_team.abbreviation,
+      },
+      awayTeam: {
+        id: game.visitor_team.id,
+        name: game.visitor_team.full_name,
+        abbreviation: game.visitor_team.abbreviation,
+      },
+    }));
+    return footballGameData;
+  } catch (error) {
+    console.error("Error fetching football games:", error);
     return [];
   }
 };
