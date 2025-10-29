@@ -7,8 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Platform,
 } from "react-native";
-import { callTeams } from "../ApiScripts";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
 import {
@@ -19,7 +19,7 @@ import {
 } from "../../database/db";
 
 interface Team {
-  id: string;
+  id: number | string;
   name: string;
   nickname: string;
   logo: string;
@@ -44,14 +44,48 @@ const FavoriteTeams = () => {
       try {
         const favTeams = await getFavTeamNames(username);
         setSelectedTeams(favTeams || []);
+        // Fetch teams from new backend API.
+        // Assumption: backend exposes an endpoint at /api/teams/getAllTeams that returns
+        // either an array of team objects or an object with a `data` array.
+        const host = Platform.OS === "android" ? "http://10.0.2.2:8080" : "http://localhost:8080";
+        const url = `${host}/api/teams/getAllTeams`;
+        console.log("Fetching teams from:", url);
 
-        process.env.RAPIDAPI_KEY = "f48a5921f5msh580809ba8c9e6cfp181a8ajsn545d715d6844";
-        const teamData = await callTeams();
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          console.error("Teams API returned non-OK status:", resp.status);
+        }
+        const raw = await resp.text();
+        let json: any;
+        try {
+          json = JSON.parse(raw);
+        } catch (err) {
+          // If response was already JSON (resp.json would have worked), fallback
+          try {
+            json = await resp.json();
+          } catch (err2) {
+            console.error("Failed to parse teams response", err, err2);
+            json = null;
+          }
+        }
 
-        if (teamData && teamData.length > 0) {
-          setTeams(teamData);
+        const teamArray = Array.isArray(json) ? json : json?.data || [];
+        if (teamArray && teamArray.length > 0) {
+          const mapped = teamArray.map((team: any) => ({
+            id: team.id,
+            name: team.name || team.full_name || team.teamName || "",
+            nickname: team.nickname || team.abbreviation || "",
+            logo:
+              team.logo ||
+              (team.abbreviation
+                ? `https://interstate21.com/nba-logos/${team.abbreviation}.png`
+                : undefined) ||
+              "",
+          }));
+          setTeams(mapped);
         } else {
           console.error("No teams received from API.");
+          setTeams([]);
         }
       } catch (error) {
         console.error("Error fetching teams:", error);
@@ -92,7 +126,7 @@ const FavoriteTeams = () => {
       ) : (
         <FlatList
           data={teams}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => (item.id !== undefined && item.id !== null ? item.id.toString() : item.name)}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
